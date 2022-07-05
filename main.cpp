@@ -437,6 +437,7 @@ string console(){
 
     cout << endl << "Console > ";
     getline(cin,command);
+    boost::algorithm::to_lower(command);
     return command;
 }
 
@@ -562,7 +563,7 @@ void dashboard(){
                     cout << "]" << endl;
                 }catch(int e){
                     if(e == 404){
-                        cout << "\t" << "❌ Disease not found" << endl;
+                        cout << "\t" << "❌ No location with this disease" << endl;
                     }
                 }
             } else {
@@ -578,7 +579,9 @@ void dashboard(){
                 string diseaseName = boost::algorithm::to_lower_copy(commandVector[2]);
                 try{
                     int cases = disease.cases(diseaseName,locationName);
-                    cout << "\t" << cases << endl;
+                    boost::algorithm::to_upper(diseaseName);
+                    boost::algorithm::to_upper(locationName);
+                    cout << "\t" << "Cases of " << diseaseName << " at " << locationName << " are: " << cases << endl;
                 }catch(int e){
                     if(e == 404){
                         cout << "\t" << "❌ Disease/Location not found" << endl;
@@ -589,7 +592,8 @@ void dashboard(){
                 string diseaseName = boost::algorithm::to_lower_copy(commandVector[1]);
                 try{
                     int cases = disease.cases(diseaseName);
-                    cout << "\t" << cases << endl;
+                    boost::algorithm::to_upper(diseaseName);
+                    cout << "\t" << "Cases of '" << diseaseName << "' = " << cases << endl;
                 }catch(int e){
                     if(e == 404){
                         cout << "\t" << "❌ Disease not found" << endl;
@@ -606,7 +610,8 @@ void dashboard(){
             cout << "\t" << "Exiting the program" << endl;
         }
         else{
-            cout << "Command not found" << endl;
+            cout << "Command '"<< command <<"' not found" << endl;
+            cout << "Consider 'help' command to see all available commands" << endl;
         }
     }
 

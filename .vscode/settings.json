@@ -1,6 +1,10 @@
 {
     "files.associations": {
         "vector": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "*.tcc": "cpp",
+        "functional": "cpp",
+        "tuple": "cpp",
+        "typeinfo": "cpp"
     }
 }
