@@ -69,7 +69,7 @@ class Location {
 
 class Disease{
     public:
-        string addDisease(string name);
+        vector<string> addDisease(string name,string loation,int cases);
         bool deleteDisease();
         bool listDiseases();
 };
@@ -314,6 +314,27 @@ void Location::listLocations(){
 
 
 
+// Diseases
+
+vector<string> Disease::addDisease(string name,string location,int cases){
+    string newLIne = name + "," + location + "," + to_string(cases);
+    ofstream diseaseFile("database/diseases.csv",ios::app);
+    CSV locationFile("database/locations.csv");
+
+    try{
+        locationFile.selectById(location);
+
+        diseaseFile << newLIne << endl;
+
+        return stv(newLIne,',');
+    }catch(int e){
+        if(e == 404)
+            cout << "\t" << "Location "<< location <<" not found" << endl;
+        return vector<string>();
+    }
+    
+}
+
 
 string console(){
     string command;
@@ -408,6 +429,25 @@ void dashboard(){
             }
             
         }
+        else if(command == "record"){
+            vector<string> commandVector = stv(input,' ');
+            if(commandVector.size() == 4){
+                Disease disease;
+
+                string locationName = boost::algorithm::to_lower_copy(commandVector[1]);
+                string diseaseName = boost::algorithm::to_lower_copy(commandVector[2]);
+                int cases = stoi(commandVector[3]);
+                vector<string> newDisease = disease.addDisease(diseaseName,locationName,cases);
+                if(newDisease.size() == 3){
+                    cout << "\t" << "✅" << endl;
+                }
+            } else {
+                cout << "\t" << "❌ Invalid usage of 'record' command" << endl;
+                cout << "\t" << "Try out these commands" << endl;
+                cout << "\t" << "\t - record <location> <disease> <cases>" << endl;
+            }
+        }
+        
         else{
             cout << "Command not found" << endl;
         }
