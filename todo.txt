@@ -1,0 +1,14 @@
+Locations
+-list of all the locations in the database : list locations
+- add location : add <location>
+- delete location : elete <location>
+
+
+Cases
+- record new dease case to location  => recored <location> <disease> <case></case>
+- find case of disease in location  => cases <location> <disease>
+
+Deases
+- list of all the deases in the database : list deases
+- find where disease exist : where disease 
+ 

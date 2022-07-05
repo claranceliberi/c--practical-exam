@@ -1,0 +1,397 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <map>
+#include <iterator>
+
+
+using namespace std;
+
+class CSV{
+    private:
+        const char *filename;
+
+    public:
+        CSV(const char *filename);
+        map<string, vector<string>> selectAll();
+        vector<string> selectById(int id);
+        int updateById(int id,string data);
+        int updateById(int id,vector<string>* data);
+        int deleteById(int id);
+        string add(string data);
+        vector<string> add(vector<string>* data);
+};
+
+CSV :: CSV(const char *filename){
+    this->filename = filename;
+}
+/**
+ * @brief select everything  from file
+ * 
+ * @return map<string, vector<string>> 
+ */
+map<string, vector<string>> CSV::selectAll(){
+    fstream file(this->filename);
+
+    map<string, vector<string>> dataSet;
+    vector<string> row;
+    string word,line;
+
+    while(getline(file,line)){
+        row.clear();
+        stringstream s(line);
+
+        while (getline(s, word, ',')) {
+            row.push_back(word);
+        }
+
+        dataSet.insert({row[0], row});
+
+        cout << endl;
+    }
+
+    //close file after reading
+    file.close();
+
+    return dataSet;
+}
+
+
+/**
+ * @brief select specific record in file
+ * 
+ * @param id 
+ * @return vector<string> 
+ */
+vector<string> CSV::selectById(int id){
+    fstream file(this->filename);
+
+    vector<string> foundRow;
+    string line,word;
+    int foundId;
+
+    while(getline(file,line)){
+        foundRow.clear();
+        stringstream s(line);
+
+        while(getline(s,word,',')){
+            foundRow.push_back(word);
+        }
+
+        // assuming that every first element will be interger
+        foundId = stoi(foundRow[0]);
+
+        if( foundId == id)
+            return foundRow;
+    }
+
+    file.close();
+    throw 404;
+}
+
+/**
+ * @brief Update certain line in csv file by id
+ * 
+ * @param id id of the line , this is the first number that appears in csv
+ * @param data new data to replace old one as string
+ * @return int : number of updated rows
+ */
+int CSV::updateById(int id, string data){
+    // NOTE: i know this function has stupid logic that could never be done in large enterprise application
+    // rewriting whole file 😒, i understands how overwhelming it is  and how poor perfomant it is
+    // but you need to understand that i was rushing and this was fast for me, or if you have time open PR
+    // dealing with file pointers is kinda pain
+
+
+    fstream file(this->filename);
+    ofstream temp;
+    int updatedRows =0;
+
+    string line,identity, tempFileName = "temp.csv";
+
+    temp.open(tempFileName);
+
+    while(getline(file,line)){
+
+        stringstream s(line);
+        
+        getline(s,identity,',');
+
+        if(id == stoi(identity)){
+            line.replace(line.find(line),line.length(),data);
+            updatedRows++;
+        }
+        temp << line << "\n";
+
+
+    }
+
+    temp.close();
+    file.close();
+
+    remove(this->filename);
+    rename(const_cast<char*>(tempFileName.c_str()),this->filename);
+
+    return updatedRows;
+}
+
+
+/**
+ * @brief Update certain line in csv file by id
+ * 
+ * @param id id of the line , this is the first number that appears in csv
+ * @param data new data to replace old one as string
+ * @return int : number of updated rows
+ */
+int CSV::updateById(int id, vector<string> *data){
+    string dataString = "";
+
+    for(auto & d : *data){
+        if(dataString.length() > 0)
+            dataString +=",";
+        dataString +=d;
+    }
+
+    return this->updateById(id,dataString);
+}
+
+
+/**
+ * @brief delete specific line in file
+ * 
+ * @param id 
+ * @return int : return 0 if nothing deleted , otherwise 1
+ */
+int CSV::deleteById(int id){
+    // NOTE: i know this function has stupid logic that could never be done in large enterprise application
+    // rewriting whole file 😒, i understands how overwhelming it is  and how poor perfomant it is
+    // but you need to understand that i was rushing and this was fast for me, or if you have time open PR
+    // dealing with file pointers is kinda pain
+
+
+    fstream file(this->filename);
+    ofstream temp;
+    int deleted = 0;
+
+    string line,identity, tempFileName = "temp.csv";
+
+    temp.open(tempFileName);
+
+    while(getline(file,line)){
+
+        stringstream s(line);
+
+        getline(s,identity,',');
+
+        if(id != stoi(identity)){
+            temp << line << "\n" ;
+            deleted = 1;
+        }
+
+
+    }
+
+    temp.close();
+    file.close();
+
+    remove(this->filename);
+    rename(const_cast<char*>(tempFileName.c_str()),this->filename);
+
+    return deleted;
+}
+
+
+string CSV::add(string data){
+    fstream file(this->filename);
+    map<int,int> ids;
+    string line,id,newLine;
+    int intId;
+
+    while(getline(file,line)){
+        stringstream lineStream(line);
+
+        getline(lineStream,id,',');
+        ids.insert({stoi(id), stoi(id)});
+    }
+
+    intId= stoi(id)+1;
+
+    //know wheter id exist in database
+    while(ids.find(intId) != ids.end()){
+        intId++;
+    }
+
+    file.close();
+
+    ofstream fileAppend(this->filename,ios::app);
+
+    newLine = to_string(intId) + "," + data;
+    fileAppend << newLine << endl;
+
+    fileAppend.close();
+
+    return newLine;
+}
+
+vector<string> CSV::add(vector<string>* data){
+    string dataString = "";
+
+    for(auto & d : *data){
+        if(dataString.length() > 0)
+            dataString +=",";
+        dataString += d;
+    }
+
+    string newData = this->add(dataString),singleCol;
+    vector<string> newDataVector;
+    stringstream newDataStream(newData);
+
+    while(getline(newDataStream,singleCol,',')){
+        newDataVector.push_back(singleCol);
+    }
+
+    return newDataVector;
+}
+
+
+void displayVector(vector<string> _vect){
+    copy(_vect.begin(), _vect.end(),ostream_iterator<string>(cout, " "));
+}
+
+void displayMap(map<string,vector<string>>* list){
+    map<string,vector<string> >::iterator it;
+
+    for (it = list->begin(); it != list->end(); it++)
+    {
+        cout << it->first << "\t\t";
+        displayVector(it->second);
+        cout << endl;
+    }
+}
+
+vector<string> stv(string data, char delimiter){
+    stringstream s(data);
+
+    vector<string> _v;
+    string w;
+
+    while(getline(s,w,delimiter)){
+        _v.push_back(w);
+    }
+
+    return _v;
+}
+
+string cmd(vector<string> input){
+    return input[0];
+}
+
+string console(){
+    string command;
+
+    cout << endl << "Console > ";
+    cin >> command;
+
+    return command;
+}
+
+void help(){
+    cout << "\t" << "==============================================================" << endl;
+    cout << "\t" << "*          HELP MENU                                          *" << endl;
+    cout << "\t" << "***************************************************************" << endl;
+    cout << "\t" << endl;
+    cout << "\t" << "add <location> \t\t\t\t:Add new location" << endl;
+    cout << "\t" << "delete <location> \t\t\t\t:Delete an existing location" << endl;
+    cout << "\t" << "record <location> <disease> <cases> \t\t\t\t:Record a disease and its cases" << endl;
+    cout << "\t" << "list locations \t\t\t\t:List all existing locations" << endl;
+    cout << "\t" << "list diseases \t\t\t\t:List all existing diseases" << endl;
+    cout << "\t" << "where <disease> \t\t\t\t:Find where disease exists" << endl; 
+    cout << "\t" << "cases <location> <disease> \t\t\t\t:Find where disease exists" << endl; 
+    cout << "\t" << "cases <disease> \t\t\t\t:Find total cases of a given disease" << endl; 
+    cout << "\t" << "help  \t\t\t\t:Print user manual" << endl; 
+    cout << "\t" << "exit  \t\t\t\t:Exit the program" << endl; }
+
+void dashboard(){
+
+    cout << "\t" << "==============================================================" << endl;
+    cout << "\t" << "*          Welcome to Disease Casese Reporting System!        *" << endl;
+    cout << "\t" << "***************************************************************" << endl;
+    cout << "\t" << "*                                                             *" << endl;
+    cout << "\t" << "*                                                             *" << endl;
+    cout << "\t" << "* It is developed by 'Ntwari Clarance Liberiste` as practical *" << endl;
+    cout << "\t" << "* Evaluation for end of Year 3                                *" << endl;
+    cout << "\t" << "*                                                             *" << endl;
+    cout << "\t" << "==============================================================" << endl;
+    cout << "\t" << "*                                                             *" << endl;
+    // TODO display starting time
+    cout << "\t" << "* Starting time: ......                                       *" << endl;
+    cout << "\t" << "* need a help? type 'help' then place Enter key               *" << endl;
+    cout << "\t" << endl;
+
+    help();
+
+    string command,input;
+
+    // c++ switch case
+
+    while(command != "exit"){
+
+        input = console();
+        command = cmd(stv(input,' '));
+
+        if(command == "help"){
+            help();
+        }else{
+            cout << "Command not found" << endl;
+        }
+    }
+
+
+
+
+}
+
+int main(){
+
+    // CSV csv("data.csv");
+
+    
+    // 1. TEST SELECT ALL FUNCTIONALITY
+    // map<string, vector<string>> list = csv.selectAll();
+    // displayMap(&list);
+
+    //2.  TEST GET FUNCTIONALITY
+    // try{
+    //     displayVector(csv.selectById(20));
+    // }catch(int e){
+    //     if(e == 404)
+    //     cout << "\nNot found\n" ; 
+    // }
+
+
+    //3. TEST UPDATE FUNCTIONALITY
+    // displayVector(csv.selectById(1));
+    
+    // vector<string> data= {"1","umwali","11"};
+
+    // cout << "\n\n" << csv.updateById(1,data) << "\n\n";
+    // // cout << "\n\n" << csv.updateById(1,"1,ntwari,900") << "\n\n"; // or using just string string;
+
+    // displayVector(csv.selectById(1));
+
+    //4. TEST DELETE
+    // csv.deleteById(2);
+
+    //5. ADD DATA TO FILE
+    // cout << csv.add("tracy,303");
+    // vector<string> data = {"tracy","430"};
+    // displayVector(csv.add(&data));
+
+
+
+    string command;
+
+    dashboard();
+
+}
