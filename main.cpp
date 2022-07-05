@@ -4,9 +4,28 @@
 #include <sstream>
 #include <map>
 #include <iterator>
-
+#include <cctype>
+#include <algorithm>
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
+
+vector<string> stv(string data, char delimiter){
+    stringstream s(data);
+
+    vector<string> _v;
+    string w;
+
+    while(getline(s,w,delimiter)){
+        _v.push_back(w);
+    }
+
+    return _v;
+}
+
+string cmd(vector<string> input){
+    return boost::algorithm::to_lower_copy(input[0]);
+}
 
 class CSV{
     private:
@@ -23,14 +42,20 @@ class CSV{
         vector<string> add(vector<string>* data);
 };
 
+class Location {
+    public:
+        void Locaton();
+        string addLocation(string name);
+        bool deleteLocation();
+        bool listLocations();
+};
+
+
+ //CSV
 CSV :: CSV(const char *filename){
     this->filename = filename;
 }
-/**
- * @brief select everything  from file
- * 
- * @return map<string, vector<string>> 
- */
+
 map<string, vector<string>> CSV::selectAll(){
     fstream file(this->filename);
 
@@ -58,12 +83,7 @@ map<string, vector<string>> CSV::selectAll(){
 }
 
 
-/**
- * @brief select specific record in file
- * 
- * @param id 
- * @return vector<string> 
- */
+
 vector<string> CSV::selectById(int id){
     fstream file(this->filename);
 
@@ -90,13 +110,7 @@ vector<string> CSV::selectById(int id){
     throw 404;
 }
 
-/**
- * @brief Update certain line in csv file by id
- * 
- * @param id id of the line , this is the first number that appears in csv
- * @param data new data to replace old one as string
- * @return int : number of updated rows
- */
+
 int CSV::updateById(int id, string data){
     // NOTE: i know this function has stupid logic that could never be done in large enterprise application
     // rewriting whole file 😒, i understands how overwhelming it is  and how poor perfomant it is
@@ -137,13 +151,6 @@ int CSV::updateById(int id, string data){
 }
 
 
-/**
- * @brief Update certain line in csv file by id
- * 
- * @param id id of the line , this is the first number that appears in csv
- * @param data new data to replace old one as string
- * @return int : number of updated rows
- */
 int CSV::updateById(int id, vector<string> *data){
     string dataString = "";
 
@@ -157,12 +164,6 @@ int CSV::updateById(int id, vector<string> *data){
 }
 
 
-/**
- * @brief delete specific line in file
- * 
- * @param id 
- * @return int : return 0 if nothing deleted , otherwise 1
- */
 int CSV::deleteById(int id){
     // NOTE: i know this function has stupid logic that could never be done in large enterprise application
     // rewriting whole file 😒, i understands how overwhelming it is  and how poor perfomant it is
@@ -204,34 +205,33 @@ int CSV::deleteById(int id){
 
 string CSV::add(string data){
     fstream file(this->filename);
-    map<int,int> ids;
-    string line,id,newLine;
-    int intId;
+    map<string,string> ids;
+    string line,id;
+
+    
+    string newId = stv(data,',')[0];
 
     while(getline(file,line)){
         stringstream lineStream(line);
 
         getline(lineStream,id,',');
-        ids.insert({stoi(id), stoi(id)});
+        ids.insert({id, id});
     }
 
-    intId= stoi(id)+1;
-
     //know wheter id exist in database
-    while(ids.find(intId) != ids.end()){
-        intId++;
+    if(ids.find(newId) != ids.end()){
+        throw 409;
     }
 
     file.close();
 
     ofstream fileAppend(this->filename,ios::app);
 
-    newLine = to_string(intId) + "," + data;
-    fileAppend << newLine << endl;
+    fileAppend << data << endl;
 
     fileAppend.close();
 
-    return newLine;
+    return data;
 }
 
 vector<string> CSV::add(vector<string>* data){
@@ -254,6 +254,20 @@ vector<string> CSV::add(vector<string>* data){
     return newDataVector;
 }
 
+// Location
+
+string Location::addLocation(string name){
+    CSV locationFile("database/locations.csv");
+    try{
+        return locationFile.add(name);
+    }catch(int e){
+        if(e == 409)
+            cout << "Location already exist" << endl;
+        return "";
+    }
+}
+
+
 
 void displayVector(vector<string> _vect){
     copy(_vect.begin(), _vect.end(),ostream_iterator<string>(cout, " "));
@@ -270,29 +284,13 @@ void displayMap(map<string,vector<string>>* list){
     }
 }
 
-vector<string> stv(string data, char delimiter){
-    stringstream s(data);
 
-    vector<string> _v;
-    string w;
-
-    while(getline(s,w,delimiter)){
-        _v.push_back(w);
-    }
-
-    return _v;
-}
-
-string cmd(vector<string> input){
-    return input[0];
-}
 
 string console(){
     string command;
 
     cout << endl << "Console > ";
-    cin >> command;
-
+    getline(cin,command);
     return command;
 }
 
@@ -312,7 +310,7 @@ void help(){
     cout << "\t" << "help  \t\t\t\t:Print user manual" << endl; 
     cout << "\t" << "exit  \t\t\t\t:Exit the program" << endl; }
 
-void dashboard(){
+void startMenu(){
 
     cout << "\t" << "==============================================================" << endl;
     cout << "\t" << "*          Welcome to Disease Casese Reporting System!        *" << endl;
@@ -328,10 +326,17 @@ void dashboard(){
     cout << "\t" << "* Starting time: ......                                       *" << endl;
     cout << "\t" << "* need a help? type 'help' then place Enter key               *" << endl;
     cout << "\t" << endl;
+}
 
+
+
+void dashboard(){
+
+    startMenu();
     help();
 
     string command,input;
+    Location location;
 
     // c++ switch case
 
@@ -342,7 +347,16 @@ void dashboard(){
 
         if(command == "help"){
             help();
-        }else{
+        }
+        else if (command == "add"){
+
+            string locationName = boost::algorithm::to_lower_copy(stv(input,' ')[1]);
+            string newLocation = location.addLocation(locationName);
+            if(newLocation != "")
+                cout << "Location " <<boost::algorithm::to_upper_copy(newLocation) <<" is successfully addded" << endl;
+        }
+
+        else{
             cout << "Command not found" << endl;
         }
     }
