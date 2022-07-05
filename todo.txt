@@ -1,7 +1,7 @@
 Locations
--list of all the locations in the database : list locations
-- add location : add <location>
-- delete location : elete <location>
+-list of all the locations in the database : list locations [DONE]
+- add location : add <location> [DONE]
+- delete location : elete <location> [DEPENDS ON CASES]
 
 
 Cases

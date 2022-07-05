@@ -27,6 +27,23 @@ string cmd(vector<string> input){
     return boost::algorithm::to_lower_copy(input[0]);
 }
 
+
+void displayVector(vector<string> _vect){
+    copy(_vect.begin(), _vect.end(),ostream_iterator<string>(cout, " "));
+}
+
+void displayMap(map<string,vector<string>>* list){
+    map<string,vector<string> >::iterator it;
+
+    for (it = list->begin(); it != list->end(); it++)
+    {
+        cout << it->first << "\t\t";
+        displayVector(it->second);
+        cout << endl;
+    }
+}
+
+
 class CSV{
     private:
         const char *filename;
@@ -34,22 +51,28 @@ class CSV{
     public:
         CSV(const char *filename);
         map<string, vector<string>> selectAll();
-        vector<string> selectById(int id);
-        int updateById(int id,string data);
-        int updateById(int id,vector<string>* data);
-        int deleteById(int id);
+        vector<string> selectById(string id);
+        int updateById(string id,string data);
+        int updateById(string id,vector<string>* data);
+        int deleteById(string id);
         string add(string data);
         vector<string> add(vector<string>* data);
 };
 
 class Location {
     public:
-        void Locaton();
         string addLocation(string name);
         bool deleteLocation();
-        bool listLocations();
+        void listLocations();
 };
 
+
+class Disease{
+    public:
+        string addDisease(string name);
+        bool deleteDisease();
+        bool listDiseases();
+};
 
  //CSV
 CSV :: CSV(const char *filename){
@@ -84,7 +107,7 @@ map<string, vector<string>> CSV::selectAll(){
 
 
 
-vector<string> CSV::selectById(int id){
+vector<string> CSV::selectById(string id){
     fstream file(this->filename);
 
     vector<string> foundRow;
@@ -100,9 +123,9 @@ vector<string> CSV::selectById(int id){
         }
 
         // assuming that every first element will be interger
-        foundId = stoi(foundRow[0]);
+        // foundId = stoi(foundRow[0]);
 
-        if( foundId == id)
+        if( foundRow[0] == id)
             return foundRow;
     }
 
@@ -111,7 +134,7 @@ vector<string> CSV::selectById(int id){
 }
 
 
-int CSV::updateById(int id, string data){
+int CSV::updateById(string id, string data){
     // NOTE: i know this function has stupid logic that could never be done in large enterprise application
     // rewriting whole file 😒, i understands how overwhelming it is  and how poor perfomant it is
     // but you need to understand that i was rushing and this was fast for me, or if you have time open PR
@@ -132,7 +155,7 @@ int CSV::updateById(int id, string data){
         
         getline(s,identity,',');
 
-        if(id == stoi(identity)){
+        if(id == identity){
             line.replace(line.find(line),line.length(),data);
             updatedRows++;
         }
@@ -151,7 +174,7 @@ int CSV::updateById(int id, string data){
 }
 
 
-int CSV::updateById(int id, vector<string> *data){
+int CSV::updateById(string id, vector<string> *data){
     string dataString = "";
 
     for(auto & d : *data){
@@ -164,7 +187,7 @@ int CSV::updateById(int id, vector<string> *data){
 }
 
 
-int CSV::deleteById(int id){
+int CSV::deleteById(string id){
     // NOTE: i know this function has stupid logic that could never be done in large enterprise application
     // rewriting whole file 😒, i understands how overwhelming it is  and how poor perfomant it is
     // but you need to understand that i was rushing and this was fast for me, or if you have time open PR
@@ -185,7 +208,7 @@ int CSV::deleteById(int id){
 
         getline(s,identity,',');
 
-        if(id != stoi(identity)){
+        if(id != identity){
             temp << line << "\n" ;
             deleted = 1;
         }
@@ -262,27 +285,33 @@ string Location::addLocation(string name){
         return locationFile.add(name);
     }catch(int e){
         if(e == 409)
-            cout << "Location already exist" << endl;
+            cout << "\t" << "Location already exist" << endl;
         return "";
     }
 }
 
+void Location::listLocations(){
+    fstream locationFile("database/locations.csv");
+
+    string line;
+
+    getline(locationFile,line);
+    vector<string> locations;
 
 
-void displayVector(vector<string> _vect){
-    copy(_vect.begin(), _vect.end(),ostream_iterator<string>(cout, " "));
-}
+    while(getline(locationFile,line)){
+        boost::algorithm::to_upper(line);
+        locations.push_back(line);
+    }
+    locationFile.close();
 
-void displayMap(map<string,vector<string>>* list){
-    map<string,vector<string> >::iterator it;
+    sort(locations.begin(),locations.end());
 
-    for (it = list->begin(); it != list->end(); it++)
-    {
-        cout << it->first << "\t\t";
-        displayVector(it->second);
-        cout << endl;
+    for(string & location : locations){
+        cout << "\t" << location << endl;
     }
 }
+
 
 
 
@@ -355,7 +384,30 @@ void dashboard(){
             if(newLocation != "")
                 cout << "Location " <<boost::algorithm::to_upper_copy(newLocation) <<" is successfully addded" << endl;
         }
+        else if (command == "list"){
+            vector<string> commandVector = stv(input,' ');
 
+            if(commandVector.size() == 2){
+                 if(commandVector[1] == "locations" ){
+                    location.listLocations();
+                }
+                else if(commandVector[1] == "diseases"){
+                    CSV diseaseFile("database/diseases.csv");
+                    // diseaseFile.list();
+                } else {
+                    cout << "\t" << "Invalid usage of 'list' command" << endl;
+                    cout << "\t" << "Try out these commands" << endl;
+                    cout << "\t" << "\t - list locations" << endl;
+                    cout << "\t" << "\t - list diseases" << endl;
+                }
+            } else {
+                cout << "\t" << "Invalid usage of 'list' command" << endl;
+                cout << "\t" << "Try out these commands" << endl;
+                cout << "\t" << "\t - list locations" << endl;
+                cout << "\t" << "\t - list diseases" << endl;
+            }
+            
+        }
         else{
             cout << "Command not found" << endl;
         }
