@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <set>
+#include <iomanip>
+#include <ctime>
 
 using namespace std;
 
@@ -74,6 +76,7 @@ class Disease{
         vector<string> addDisease(string name,string loation,int cases);
         vector<string> findDiseaseLocation(string diseaseName);
         set<string> listDiseases();
+        void summary();
         int cases(string diseaseName,string location);
         int cases(string diseaseName);
 };
@@ -192,11 +195,6 @@ int CSV::updateById(string id, vector<string> *data){
 
 
 int CSV::deleteById(string id){
-    // NOTE: i know this function has stupid logic that could never be done in large enterprise application
-    // rewriting whole file 😒, i understands how overwhelming it is  and how poor perfomant it is
-    // but you need to understand that i was rushing and this was fast for me, or if you have time open PR
-    // dealing with file pointers is kinda pain
-
 
     fstream file(this->filename);
     ofstream temp;
@@ -510,6 +508,49 @@ int Disease::cases(string diseaseName){
     return cases;
 }
 
+void Disease::summary(){
+    fstream diseaseFile("database/diseases.csv");
+    string line,word;
+    int cases = 0;
+    bool foundSomething = false;
+    
+    vector<string> foundDisease;
+    map<string,int> diseaseMap;
+    map<string,int >::iterator it;
+
+    getline(diseaseFile,line); // skip header
+
+    while(getline(diseaseFile,line)){
+        foundDisease.clear();
+        stringstream s(line);
+
+        while(getline(s,word,',')){
+            foundDisease.push_back(word);
+        }
+        cases += stoi(foundDisease[2]);
+        foundSomething = true;
+        diseaseMap[foundDisease[1]] += stoi(foundDisease[2]);
+    }
+    diseaseFile.close();
+
+    if(!foundSomething)
+        throw 404;
+    
+    cout << endl;
+    cout << "\t" << "Locations Summary" << endl;
+    cout << "\t" << "--------------------------------------------" << endl;
+    cout << "\t" << setfill(' ') << left << setw(30) << "Location" << "Total cases" << endl;
+    for (it = diseaseMap.begin(); it != diseaseMap.end(); it++)
+    {
+        cout << "\t" << setfill(' ') << left << setw(30) << it->first << it->second;
+        cout << endl;
+    }
+    
+    cout << endl;
+    cout << "\t" << "Total cases: " << cases << endl;
+    cout << endl;
+}
+
 string console(){
     string command;
 
@@ -519,51 +560,64 @@ string console(){
     return command;
 }
 
+string currentTime(){
+    time_t t = time(0);   // get time now
+    tm* now = localtime(&t);
+    string timeString = asctime(now);
+
+    stringstream s(timeString);
+    getline(s,timeString);
+
+    return timeString;
+}
+
 void help(){
-    cout << "\t" << "==============================================================" << endl;
-    cout << "\t" << "*          HELP MENU                                          *" << endl;
-    cout << "\t" << "***************************************************************" << endl;
+    cout << "\t" << "==============================================================================================================" << endl;
+    cout << "\t" << "*                                                                                                            *" << endl;
+    cout << "\t" << "*                                          HELP MENU                                                         *" << endl;
+    cout << "\t" << "*                                                                                                            *" << endl;
+    cout << "\t" << "**************************************************************************************************************" << endl;
     cout << "\t" << endl;
-    cout << "\t" << "add <location> \t\t\t\t:Add new location" << endl;
-    cout << "\t" << "delete <location> \t\t\t\t:Delete an existing location" << endl;
-    cout << "\t" << "record <location> <disease> <cases> \t\t\t\t:Record a disease and its cases" << endl;
-    cout << "\t" << "list locations \t\t\t\t:List all existing locations" << endl;
-    cout << "\t" << "list diseases \t\t\t\t:List all existing diseases" << endl;
-    cout << "\t" << "where <disease> \t\t\t\t:Find where disease exists" << endl; 
-    cout << "\t" << "cases <location> <disease> \t\t\t\t:Find where disease exists" << endl; 
-    cout << "\t" << "cases <disease> \t\t\t\t:Find total cases of a given disease" << endl; 
-    cout << "\t" << "help  \t\t\t\t:Print user manual" << endl; 
-    cout << "\t" << "exit  \t\t\t\t:Exit the program" << endl; }
+    cout << "\t" << setfill(' ') << left << setw(50) << "add <location> " << ":Add new location" << endl;
+    cout << "\t" << setfill(' ') << left << setw(50) << "delete <location> " << ":Delete an existing location" << endl;
+    cout << "\t" << setfill(' ') << left << setw(50) << "record <location> <disease> <cases> " << ":Record a disease and its cases" << endl;
+    cout << "\t" << setfill(' ') << left << setw(50) << "list locations " << ":List all existing locations" << endl;
+    cout << "\t" << setfill(' ') << left << setw(50) << "list diseases " << ":List all existing diseases" << endl;
+    cout << "\t" << setfill(' ') << left << setw(50) << "where <disease> " << ":Find where disease exists" << endl; 
+    cout << "\t" << setfill(' ') << left << setw(50) << "cases <location> <disease> " << ":Find where disease exists" << endl; 
+    cout << "\t" << setfill(' ') << left << setw(50) << "cases <disease> " << ":Find total cases of a given disease" << endl; 
+    cout << "\t" << setfill(' ') << left << setw(50) << "help  " << ":Print user manual" << endl; 
+    cout << "\t" << setfill(' ') << left << setw(50) << "exit  " << ":Exit the program" << endl; }
 
 void startMenu(){
 
-    cout << "\t" << "==============================================================" << endl;
-    cout << "\t" << "*          Welcome to Disease Casese Reporting System!        *" << endl;
-    cout << "\t" << "***************************************************************" << endl;
-    cout << "\t" << "*                                                             *" << endl;
-    cout << "\t" << "*                                                             *" << endl;
-    cout << "\t" << "* It is developed by 'Ntwari Clarance Liberiste` as practical *" << endl;
-    cout << "\t" << "* Evaluation for end of Year 3                                *" << endl;
-    cout << "\t" << "*                                                             *" << endl;
-    cout << "\t" << "==============================================================" << endl;
-    cout << "\t" << "*                                                             *" << endl;
-    // TODO display starting time
-    cout << "\t" << "* Starting time: ......                                       *" << endl;
-    cout << "\t" << "* need a help? type 'help' then place Enter key               *" << endl;
+    cout << "\t" << "==============================================================================================================" << endl;
+    cout << "\t" << "*                                                                                                            *" << endl;
+    cout << "\t" << "*                                     Welcome to Disease Casese Reporting System!                            *" << endl;
+    cout << "\t" << "*                                                                                                            *" << endl;
+    cout << "\t" << "**************************************************************************************************************" << endl;
+    cout << "\t" << "*                                                                                                            *" << endl;
+    cout << "\t" << "*                                                                                                            *" << endl;
+    cout << "\t" << "* It is developed by 'Ntwari Clarance Liberiste` as practical                                                *" << endl;
+    cout << "\t" << "* Evaluation for end of Year 3                                                                               *" << endl;
+    cout << "\t" << "*                                                                                                            *" << endl;
+    cout << "\t" << "==============================================================================================================" << endl;
+    cout << "\t" << "*                                                                                                            *" << endl;
+    cout << "\t" << "* Starting time: " << setfill(' ') << left << setw(92) << currentTime() <<"*" << endl;
+    cout << "\t" << "* need a help? type 'help' then place Enter key                                                              *" << endl;
     cout << "\t" << endl;
 }
 
 
 
 void dashboard(){
-
+    cout << "\033[2J\033[1;1H"; // clear screen
     startMenu();
     help();
 
     string command,input;
     Location location;
     Disease disease;
-    // c++ switch case
 
     while(command != "exit"){
 
@@ -690,7 +744,6 @@ void dashboard(){
                 string locationName = boost::algorithm::to_lower_copy(commandVector[1]);
 
                 location.deleteLocation(locationName);
-                
             } else {
                 cout << "\t" << "❌ Invalid usage of 'delete' command" << endl;
                 cout << "\t" << "Try out these commands" << endl;
@@ -698,6 +751,8 @@ void dashboard(){
             }
         }
         else if(command == "exit"){
+            disease.summary();
+            cout << "\t" << "Ending time :" << currentTime() << endl;
             cout << "\t" << "Exiting the program" << endl;
         }
         else{
@@ -713,44 +768,7 @@ void dashboard(){
 
 int main(){
 
-    // CSV csv("data.csv");
-
-    
-    // 1. TEST SELECT ALL FUNCTIONALITY
-    // map<string, vector<string>> list = csv.selectAll();
-    // displayMap(&list);
-
-    //2.  TEST GET FUNCTIONALITY
-    // try{
-    //     displayVector(csv.selectById(20));
-    // }catch(int e){
-    //     if(e == 404)
-    //     cout << "\nNot found\n" ; 
-    // }
-
-
-    //3. TEST UPDATE FUNCTIONALITY
-    // displayVector(csv.selectById(1));
-    
-    // vector<string> data= {"1","umwali","11"};
-
-    // cout << "\n\n" << csv.updateById(1,data) << "\n\n";
-    // // cout << "\n\n" << csv.updateById(1,"1,ntwari,900") << "\n\n"; // or using just string string;
-
-    // displayVector(csv.selectById(1));
-
-    //4. TEST DELETE
-    // csv.deleteById(2);
-
-    //5. ADD DATA TO FILE
-    // cout << csv.add("tracy,303");
-    // vector<string> data = {"tracy","430"};
-    // displayVector(csv.add(&data));
-
-
-
-    string command;
-
     dashboard();
 
+    return  0;
 }

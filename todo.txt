@@ -1,7 +1,7 @@
 Locations
 -list of all the locations in the database : list locations [DONE]
 - add location : add <location> [DONE]
-- delete location : elete <location> [DEPENDS ON CASES]
+- delete location : elete <location> [DONE]
 
 
 Cases
@@ -9,7 +9,8 @@ Cases
 - find case of disease in location  => cases <location> <disease> [DONE]
 
 Deases
-- list of all the deases in the database : list deases
+- list of all the deases in the database : list deases [DONE ]
 - find where disease exist : where disease [DONE]
  
-- Tabulra help  menu
+- Tabulra help  menu [DONE]
+- exit program with summary [DONE]
