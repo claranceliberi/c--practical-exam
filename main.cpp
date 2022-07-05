@@ -7,6 +7,7 @@
 #include <cctype>
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
+#include <set>
 
 using namespace std;
 
@@ -70,8 +71,8 @@ class Location {
 class Disease{
     public:
         vector<string> addDisease(string name,string loation,int cases);
-        bool deleteDisease();
-        bool listDiseases();
+        vector<string> findDiseaseLocation(string diseaseName);
+        set<string> listDiseases();
 };
 
  //CSV
@@ -296,18 +297,17 @@ void Location::listLocations(){
     string line;
 
     getline(locationFile,line);
-    vector<string> locations;
+    set<string> locations;
 
 
     while(getline(locationFile,line)){
         boost::algorithm::to_upper(line);
-        locations.push_back(line);
+        locations.insert(line);
     }
     locationFile.close();
 
-    sort(locations.begin(),locations.end());
 
-    for(string & location : locations){
+    for(auto location : locations){
         cout << "\t" << location << endl;
     }
 }
@@ -335,7 +335,45 @@ vector<string> Disease::addDisease(string name,string location,int cases){
     
 }
 
+vector<string> Disease::findDiseaseLocation(string diseaseName){
+    fstream diseaseFile("database/diseases.csv");
+    vector<string> foundDisease,locations;
+    string line,word;
+    stringstream s(line);
 
+    while(getline(diseaseFile,line)){
+        foundDisease.clear();
+        stringstream s(line);
+
+        while(getline(s,word,',')){
+            foundDisease.push_back(word);
+        }
+        if(foundDisease[0] == diseaseName){
+            locations.push_back(foundDisease[1]);
+        }
+    }
+    diseaseFile.close();
+
+    if(locations.size() == 0)
+        throw 404;
+
+    return locations;
+}
+
+set<string> Disease::listDiseases(){
+    fstream diseaseFile("database/diseases.csv");
+    set<string> diseases;
+    string line,word;
+    getline(diseaseFile,line);
+
+    while(getline(diseaseFile,line)){
+        stringstream s(line);
+        getline(s,word,',');
+        diseases.insert(word);
+    }
+    diseaseFile.close();
+    return diseases;
+}
 string console(){
     string command;
 
@@ -387,7 +425,7 @@ void dashboard(){
 
     string command,input;
     Location location;
-
+    Disease disease;
     // c++ switch case
 
     while(command != "exit"){
@@ -413,7 +451,11 @@ void dashboard(){
                     location.listLocations();
                 }
                 else if(commandVector[1] == "diseases"){
-                    CSV diseaseFile("database/diseases.csv");
+                    set<string> listOfDisease =  disease.listDiseases();
+
+                    for(auto disease : listOfDisease){
+                        cout << "\t" << disease << endl;
+                    }
                     // diseaseFile.list();
                 } else {
                     cout << "\t" << "Invalid usage of 'list' command" << endl;
@@ -432,8 +474,6 @@ void dashboard(){
         else if(command == "record"){
             vector<string> commandVector = stv(input,' ');
             if(commandVector.size() == 4){
-                Disease disease;
-
                 string locationName = boost::algorithm::to_lower_copy(commandVector[1]);
                 string diseaseName = boost::algorithm::to_lower_copy(commandVector[2]);
                 int cases = stoi(commandVector[3]);
@@ -447,7 +487,32 @@ void dashboard(){
                 cout << "\t" << "\t - record <location> <disease> <cases>" << endl;
             }
         }
-        
+        else if(command == "where"){
+            vector<string> commandVector = stv(input,' ');
+            if(commandVector.size() == 2){
+                string diseaseName = boost::algorithm::to_lower_copy(commandVector[1]);
+                
+                try{
+                    vector<string> locations = disease.findDiseaseLocation(diseaseName);
+
+                    cout << "\t" << "[";
+                    for(int i = 0; i < locations.size(); i++){
+                        if(i!=0)
+                            cout << ",";
+                        cout  << locations[i];
+                    }
+                    cout << "]" << endl;
+                }catch(int e){
+                    if(e == 404){
+                        cout << "\t" << "❌ Disease not found" << endl;
+                    }
+                }
+            } else {
+                cout << "\t" << "❌ Invalid usage of 'where' command" << endl;
+                cout << "\t" << "Try out these commands" << endl;
+                cout << "\t" << "\t - where <disease>" << endl;
+            }
+        }
         else{
             cout << "Command not found" << endl;
         }
