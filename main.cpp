@@ -218,7 +218,8 @@ int CSV::deleteById(string id){
 
         if(id != identity){
             temp << line << "\n" ;
-            deleted = 1;
+        }else {
+            deleted += 1;
         }
 
 
@@ -371,14 +372,19 @@ bool Location::deleteLocation(string locationName){
         int deletedDiseaseLocations = diseaseFile.deleteBy(locationName,1); 
 
         if(deletedDiseaseLocations > 0){
-            cout << "\t" << "Deleted " << deletedDiseaseLocations << " diseases in '" << locationName << "'" << endl;
+            cout << "\t" << "Deleted " << deletedDiseaseLocations << " diseases in '" << boost::algorithm::to_upper_copy(locationName) << "'" << endl;
         }else{
-            cout << "\t" << "No diseases in '" << locationName << "' to delete" << endl;
+            cout << "\t" << "No diseases in '" << boost::algorithm::to_upper_copy(locationName) << "' to delete" << endl;
         }
 
-        locationFile.deleteById(locationName);
+        int deletedLocations =  locationFile.deleteById(locationName);
 
-        cout << "\t" << "Deleted '" << locationName << "'" << endl;
+        if(deletedLocations > 0){
+            cout << "\t" << "Deleted '" << boost::algorithm::to_upper_copy(locationName) << "' location" << endl;
+        }else {
+            cout << "\t" << "No location named '"<< boost::algorithm::to_upper_copy(locationName) <<"' to delete" << endl;
+        }
+
         return true;
     }catch(int e){
         if(e == 404)
