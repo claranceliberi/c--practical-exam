@@ -73,6 +73,8 @@ class Disease{
         vector<string> addDisease(string name,string loation,int cases);
         vector<string> findDiseaseLocation(string diseaseName);
         set<string> listDiseases();
+        int cases(string diseaseName,string location);
+        int cases(string diseaseName);
 };
 
  //CSV
@@ -374,6 +376,62 @@ set<string> Disease::listDiseases(){
     diseaseFile.close();
     return diseases;
 }
+
+int Disease::cases(string diseaseName,string location){
+    fstream diseaseFile("database/diseases.csv");
+    string line,word;
+    int cases = 0;
+    bool foundSomething = false;
+    
+    vector<string> foundDisease;
+
+    while(getline(diseaseFile,line)){
+        foundDisease.clear();
+        stringstream s(line);
+
+        while(getline(s,word,',')){
+            foundDisease.push_back(word);
+        }
+        if(foundDisease[0] == diseaseName && foundDisease[1] == location){
+            cases += stoi(foundDisease[2]);
+            foundSomething = true;
+        }
+    }
+    diseaseFile.close();
+
+    if(!foundSomething)
+        throw 404;
+
+    return cases;
+}
+
+int Disease::cases(string diseaseName){
+    fstream diseaseFile("database/diseases.csv");
+    string line,word;
+    int cases = 0;
+    bool foundSomething = false;
+    
+    vector<string> foundDisease;
+
+    while(getline(diseaseFile,line)){
+        foundDisease.clear();
+        stringstream s(line);
+
+        while(getline(s,word,',')){
+            foundDisease.push_back(word);
+        }
+        if(foundDisease[0] == diseaseName){
+            cases += stoi(foundDisease[2]);
+            foundSomething = true;
+        }
+    }
+    diseaseFile.close();
+
+    if(!foundSomething)
+        throw 404;
+    return cases;
+}
+
 string console(){
     string command;
 
@@ -512,6 +570,40 @@ void dashboard(){
                 cout << "\t" << "Try out these commands" << endl;
                 cout << "\t" << "\t - where <disease>" << endl;
             }
+        }
+        else if(command == "cases"){
+            vector<string> commandVector = stv(input,' ');
+            if(commandVector.size() == 3){
+                string locationName = boost::algorithm::to_lower_copy(commandVector[1]);
+                string diseaseName = boost::algorithm::to_lower_copy(commandVector[2]);
+                try{
+                    int cases = disease.cases(diseaseName,locationName);
+                    cout << "\t" << cases << endl;
+                }catch(int e){
+                    if(e == 404){
+                        cout << "\t" << "❌ Disease/Location not found" << endl;
+                    }
+                }
+            }
+            else if(commandVector.size() == 2){
+                string diseaseName = boost::algorithm::to_lower_copy(commandVector[1]);
+                try{
+                    int cases = disease.cases(diseaseName);
+                    cout << "\t" << cases << endl;
+                }catch(int e){
+                    if(e == 404){
+                        cout << "\t" << "❌ Disease not found" << endl;
+                    }
+                }
+            } else {
+                cout << "\t" << "❌ Invalid usage of 'cases' command" << endl;
+                cout << "\t" << "Try out these commands" << endl;
+                cout << "\t" << "\t - cases <location> <disease>" << endl;
+                cout << "\t" << "\t - cases <disease>" << endl;
+            }
+        }
+        else if(command == "exit"){
+            cout << "\t" << "Exiting the program" << endl;
         }
         else{
             cout << "Command not found" << endl;

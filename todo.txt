@@ -6,9 +6,10 @@ Locations
 
 Cases
 - record new dease case to location  => recored <location> <disease> <case></case> [DONE]
-- find case of disease in location  => cases <location> <disease>
+- find case of disease in location  => cases <location> <disease> [DONE]
 
 Deases
 - list of all the deases in the database : list deases
 - find where disease exist : where disease [DONE]
  
+- Tabulra help  menu
