@@ -56,6 +56,7 @@ class CSV{
         int updateById(string id,string data);
         int updateById(string id,vector<string>* data);
         int deleteById(string id);
+        int deleteBy(string value,int colIndex);
         string add(string data);
         vector<string> add(vector<string>* data);
 };
@@ -63,7 +64,7 @@ class CSV{
 class Location {
     public:
         string addLocation(string name);
-        bool deleteLocation();
+        bool deleteLocation(string locationName);
         void listLocations();
 };
 
@@ -204,6 +205,10 @@ int CSV::deleteById(string id){
     string line,identity, tempFileName = "temp.csv";
 
     temp.open(tempFileName);
+    
+    // write headers
+    getline(file,line);
+    temp << line << "\n" ;
 
     while(getline(file,line)){
 
@@ -214,6 +219,49 @@ int CSV::deleteById(string id){
         if(id != identity){
             temp << line << "\n" ;
             deleted = 1;
+        }
+
+
+    }
+
+    temp.close();
+    file.close();
+
+    remove(this->filename);
+    rename(const_cast<char*>(tempFileName.c_str()),this->filename);
+
+    return deleted;
+}
+
+
+int CSV::deleteBy(string value,int colIndex){
+
+
+    fstream file(this->filename);
+    ofstream temp;
+    int deleted = 0;
+
+    string line,col, tempFileName = "temp.csv";
+    vector<string> row;
+
+    temp.open(tempFileName);
+    // write headers
+    getline(file,line);
+    temp << line << "\n" ;
+
+    while(getline(file,line)){
+        row.clear();
+
+        stringstream s(line);
+
+        while(getline(s,col,',')){
+            row.push_back(col);
+        }
+
+        if(row[colIndex] != value){
+            temp << line << "\n" ;
+        }else {
+            deleted += 1;
         }
 
 
@@ -314,6 +362,30 @@ void Location::listLocations(){
     }
 }
 
+bool Location::deleteLocation(string locationName){
+    CSV locationFile("database/locations.csv");
+    CSV diseaseFile("database/diseases.csv");
+
+    try{
+        
+        int deletedDiseaseLocations = diseaseFile.deleteBy(locationName,1); 
+
+        if(deletedDiseaseLocations > 0){
+            cout << "\t" << "Deleted " << deletedDiseaseLocations << " diseases in '" << locationName << "'" << endl;
+        }else{
+            cout << "\t" << "No diseases in '" << locationName << "' to delete" << endl;
+        }
+
+        locationFile.deleteById(locationName);
+
+        cout << "\t" << "Deleted '" << locationName << "'" << endl;
+        return true;
+    }catch(int e){
+        if(e == 404)
+            cout << "\t" << "Location not found" << endl;
+        return false;
+    }
+}
 
 
 // Diseases
@@ -604,6 +676,19 @@ void dashboard(){
                 cout << "\t" << "Try out these commands" << endl;
                 cout << "\t" << "\t - cases <location> <disease>" << endl;
                 cout << "\t" << "\t - cases <disease>" << endl;
+            }
+        }
+        else if(command == "delete"){
+            vector<string> commandVector = stv(input,' ');
+            if(commandVector.size() == 2){
+                string locationName = boost::algorithm::to_lower_copy(commandVector[1]);
+
+                location.deleteLocation(locationName);
+                
+            } else {
+                cout << "\t" << "❌ Invalid usage of 'delete' command" << endl;
+                cout << "\t" << "Try out these commands" << endl;
+                cout << "\t" << "\t - delete <location> " << endl;
             }
         }
         else if(command == "exit"){
